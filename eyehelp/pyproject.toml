@@ -1,0 +1,49 @@
+[tool.briefcase]
+project_name = "Eye Help"
+bundle = "com.example"
+version = "0.0.1"
+url = "https://example.com/eyehelp"
+license = "BSD license"
+author = 'Eric Zhang'
+author_email = "ericzh1616@gmail.com"
+
+[tool.briefcase.app.eyehelp]
+formal_name = "Eye Help"
+description = "Reduce eye strain on screens"
+icon = "src/eyehelp/resources/eyehelp"
+sources = ['src/eyehelp']
+requires = []
+
+
+[tool.briefcase.app.eyehelp.macOS]
+requires = [
+    'toga-cocoa>=0.3.0.dev20',
+]
+
+[tool.briefcase.app.eyehelp.linux]
+requires = [
+    'toga-gtk>=0.3.0.dev20',
+]
+system_requires = [
+    'libgirepository1.0-dev',
+    'libcairo2-dev',
+    'libpango1.0-dev',
+    'libwebkitgtk-3.0-0',
+    'gir1.2-webkit-3.0',
+]
+
+[tool.briefcase.app.eyehelp.windows]
+requires = [
+    'toga-winforms>=0.3.0.dev20',
+]
+
+# Mobile deployments
+[tool.briefcase.app.eyehelp.iOS]
+requires = [
+    'toga-iOS>=0.3.0.dev20',
+]
+
+[tool.briefcase.app.eyehelp.android]
+requires = [
+    'toga-android>=0.3.0.dev20',
+]
