@@ -1,0 +1,34 @@
+Problems interested in:
+-climate change
+-health
+
+Climate change:
+-Too much Co2
+  -Lack of trees
+  -Fossil fuels (cars)
+  -Production of food
+  -Industries
+-Possible solutions to above problems
+  1. Device to plant and water tree in yard without much manual labor (more people may want to plant trees this way)
+  2. Daily planner with a CO2 tracker (transportation, food, online products, and many daily activities can increase CO2)
+
+Health:
+-Movement issues
+  -Permanent/long term injuries
+  -Lack of physical activity
+  -Bad food consumption
+-Lack of vision
+  -Genetics
+  -Eye strain from screens (especially due to covid)
+-Cancer
+  -Mutations / genetics
+  -Can be slowed down in early stages
+-Possible solutions to above problems
+  3. App to monitor screen usage and person's blinking (people often blink less on screens and eyes worsen)
+  4. Phone app + earbuds to help blind person navigate on their own (if a person with loss of vision doesn't want a guide when going out)
+
+Determining which solution to attempt
+1. Tough to implement and requires hardware I don't have - No
+2. Lot's of research for CO2 emission (Desktop and/or Mobile app) - Maybe
+3. Use timers and python opencv for face detection to check if user there (Desktop app) - Most interested in
+4. Tough to implement and can cause accidents if something goes wrong - No

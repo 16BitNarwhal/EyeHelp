@@ -1,0 +1,15 @@
+Problem: Vision loss due to eye strain and screen usage
+Solution: Screen usage timer/detector app to reduce eyestrain and make sure user takes breaks from screen
+
+20-20-20 rule:
+-Every 20 minutes, look somewhere 20m away for 20 seconds
+-Implementation: When user opens computer, every 20 minutes notify user to take a break for 20 seconds. Should have a 'do not disturb' option too. 
+-Use face detection to track whether user is in front of computer or not (can use opencv)
+-Desktop application (can use beeware and toga)
+
+Possible features/extra things (in order of difficulty):
+-Use eye blink detection to make sure user is blinking enough (need to research on average blinks and how to implement)
+-Good U.I.
+-Preferences for timer
+
+Use github for version management, put planning files into github repository too
