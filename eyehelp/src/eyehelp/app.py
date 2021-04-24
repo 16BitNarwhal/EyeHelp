@@ -1,43 +1,67 @@
-"""
+'''
 Reduce eye strain on screens
-"""
+'''
 # import packages
 import toga 
-from toga.style.pack import Pack, COLUMN
+from toga.style.pack import Pack, COLUMN, ROW
 import threading
 import time
+import os
+import sys
 import eyehelp.face_detect as fd
-# from eyehelp.face_detect import *
 
 class EyeHelp(toga.App):
     # Called when application starts
     def startup(self):
+        # Images
+        path = os.path.dirname(sys.argv[0])
+
         # Constants
         self.CHECKUP_TIME = 10 # 20 * 60 
-        self.BREAK_TIME = 3 # 20
+        self.BREAK_TIME = 3 # 20 
 
-        main_box = toga.Box(style=Pack(direction=COLUMN))
-        
-        # Timer buttons
+        # Activity box
+        activity_box = toga.Box(style=Pack(direction=COLUMN, background_color='aqua'))
+
         self.timer_running = False
 
-        start_button = toga.Button(
+        self.start_button = toga.Button(
             'Start Timer!',
             on_press=self.begin_timer,
-            style=Pack(padding=(10, 100), height=30)
+            style=Pack(padding_left=50, padding_right=50, padding_top=20, 
+                background_color='violet', height=30)
         )
 
-        stop_button = toga.Button(
+        self.stop_button = toga.Button(
             'Stop Timer!',
             on_press=self.stop_timer,
-            style=Pack(padding=(5, 100), height=30)
+            style=Pack(padding_left=50, padding_right=50, padding_top=10, padding_bottom=20, 
+                background_color='violet', height=30),
+            enabled=False
         )
 
-        main_box.add(start_button)
-        main_box.add(stop_button)
+        activity_box.add(self.start_button)
+        activity_box.add(self.stop_button)
+
+        # Config box
+        config_box = toga.Box(style=Pack(direction=COLUMN, background_color='aqua'))
+        self.video_switch = toga.Switch(
+            'Show Video',
+            style=Pack(padding_left=50, padding_right=50, padding_top=20, padding_bottom=20,
+                background_color='red')
+        )
+
+        config_box.add(self.video_switch)
+
+        options = toga.OptionContainer(style=Pack(direction=ROW, background_color='snow'))
+        options.add('Activity', activity_box)
+        options.add('Configuration', config_box)
+
+        main_box = toga.Box(style=Pack(padding=(10,10), direction=COLUMN, height=400, background_color='snow'))
+        main_box.add(options)
 
         # Create and show main window
-        self.main_window = toga.MainWindow(title=self.formal_name)         
+        self.main_window = toga.MainWindow(title=self.formal_name, size=(400,400), resizeable=False)
         self.main_window.content = main_box
         self.main_window.show()
 
@@ -45,10 +69,16 @@ class EyeHelp(toga.App):
     def begin_timer(self, widget):
         if self.timer_running:
             print('[App] Timer already running')
-            return 
+            return
+        print('[App] Timer started') 
+        # toggle buttons usage
+        self.start_button.enabled = False
+        self.stop_button.enabled = True
+
         self.timer_running = True
         fd.detect_exit = False
-        print('[App] Timer started') 
+        
+        # start threads
         self.timer_thread = threading.Thread(target=self.timer_loop)
         self.detect_thread = threading.Thread(target=self.start_detect)
         self.timer_thread.start()
@@ -59,10 +89,14 @@ class EyeHelp(toga.App):
         if not self.timer_running:
             print('[App] Timer not start')
             return
-    
         print('[App] Timer stopped')
+        # toggle buttons usage
+        self.start_button.enabled = True
+        self.stop_button.enabled = False
+
         fd.detect_exit = True
-        self.timer_running = False
+
+        # join threads
         self.timer_thread.join()
         self.detect_thread.join()
     
@@ -70,7 +104,6 @@ class EyeHelp(toga.App):
     def timer_loop(self):         
         start_time = time.time()
         while True:
-
             # When user has been on screen for some time (CHECKUP_TIME)
             elapsed_time = time.time() - start_time 
             if elapsed_time >= self.CHECKUP_TIME:
@@ -80,8 +113,9 @@ class EyeHelp(toga.App):
                 command = toga.Command(self.notify, 'Command')
                 command.action(command)
 
-                # restart time
+                # restart timer and blink counter
                 start_time = time.time()
+                fd.blink_count = 0
 
             # When user has left screen for more than some time (BREAK_TIME)
             if not fd.has_face:
@@ -89,11 +123,16 @@ class EyeHelp(toga.App):
 
             # exit loop / stop timer
             if fd.detect_exit:
+                self.timer_running = False
                 break
+            
+        # make sure button usage is changed (if opencv is force quitted with q key)
+        self.start_button.enabled = True
+        self.stop_button.enabled = False
         
     # starts face detection in face_detect.py
     def start_detect(self):
-        fd.start_detection(self.BREAK_TIME, True)
+        fd.start_detection(self.BREAK_TIME, self.video_switch.is_on)
 
     # may replace with a python windows balloon tip notifier vvv
     # notifies the user with a dialog box
@@ -103,6 +142,7 @@ class EyeHelp(toga.App):
             'Eye Help',
             'It has been 20 minutes, please take a 20 seconds break'
         )
+ 
 
 def main():
     return EyeHelp()
