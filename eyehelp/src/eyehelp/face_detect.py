@@ -32,8 +32,8 @@ def start_detection(BREAK_TIME=20, DISPLAY_FRAME=False, SAVE_EAR_DATA=False,
                     DISPLAY_TYPE='none', COUNTDOWN=10):
     print('[face_detect] Starting face detection') 
     global has_face
-    global detect_exit
-    global blink_count 
+    global detect_exit 
+    global blink_count
     
     # path for 68 facial landmarks predictor from http://dlib.net/
     ospath = os.path.dirname(sys.argv[0])

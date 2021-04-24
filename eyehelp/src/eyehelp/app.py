@@ -11,6 +11,7 @@ import sys
 import random
 import eyehelp.face_detect as fd
 import eyehelp.calibrate as calibrate
+import eyehelp.grapher as grapher
 
 # Label for multiple lines
 def MultilineLabel(text : str, box_style : Pack = None, label_style : Pack = None, char_line=30) -> toga.Box :
@@ -37,11 +38,11 @@ class EyeHelp(toga.App):
     def startup(self):
         # Paths and files
         ospath = os.path.dirname(sys.argv[0])
-        self.CONFIG_FILE = ospath + '\\config'
-
+        self.CONFIG_FILE = ospath + '\\config' 
+        
         # Constants
-        self.CHECKUP_TIME = 10 # 20 * 60 
-        self.BREAK_TIME = 3 # 20 
+        self.CHECKUP_TIME = 20 * 60 
+        self.BREAK_TIME = 20
 
         # Activity box
         activity_box = toga.Box(style=Pack(direction=COLUMN, background_color='aqua'))
@@ -54,7 +55,7 @@ class EyeHelp(toga.App):
                 font_family='monospace', font_size=30, font_weight='bold')
         )
 
-        instruction = 'Start and stop timer to track your eye blinks and screen usage'
+        instruction = 'Start and stop timer to track your screen use and eye blinks'
         
         instructions_box = MultilineLabel(
             instruction,
@@ -62,7 +63,7 @@ class EyeHelp(toga.App):
             label_style=Pack(padding_bottom=10, font_family='monospace', font_size=12),
             char_line=35
         )
-
+        
         self.start_button = toga.Button(
             'Start Timer!',
             on_press=self.begin_timer,
@@ -77,11 +78,19 @@ class EyeHelp(toga.App):
                 background_color='violet', height=50, font_family='monospace', font_size=20),
             enabled=False
         )
+ 
+        # https://www.healthline.com/health/how-many-times-do-you-blink-a-day
+        blinks_label = MultilineLabel('It is recommended to blink 15 - 20 times in a minute',
+            box_style=Pack(direction=COLUMN, padding_bottom=10, background_color='aqua'), 
+            label_style=Pack(padding_left=50, 
+                background_color='aqua', font_family='monospace', font_size=12), char_line=35
+        )
 
         activity_box.add(title_label)
         activity_box.add(self.start_button)
         activity_box.add(self.stop_button)
         activity_box.add(instructions_box)
+        activity_box.add(blinks_label)
 
         # Eye tips box
         # https://www.mayoclinic.org/diseases-conditions/eyestrain/diagnosis-treatment/drc-20372403
@@ -122,10 +131,30 @@ class EyeHelp(toga.App):
         calibrate_when = MultilineLabel('Use this if you feel that blinks are not being counted correctly',
             box_style=Pack(direction=COLUMN, padding_bottom=10, background_color='aqua'),
             label_style=Pack(padding_left=10, font_family='monospace', font_size=15))
+        graph_button = toga.Button(
+            'Graph Eye Aspect Ratio',
+            style=Pack(padding_left=50, padding_right=50, padding_top=10, padding_bottom=10,
+                background_color='violet', font_family='monospace', font_size=15),
+            on_press=self.start_graph
+        )
+
+        EAR_definition = MultilineLabel('*Eye aspect ratio is lower the more your eyes close',
+            box_style=Pack(direction=COLUMN, padding_bottom=10, background_color='aqua'),
+            label_style=Pack(padding_left=10, font_family='monospace', font_size=13))
+        
+        # manual calibration is a work in progress
+        manual_label = toga.Label('Manually calibrate (pick EAR) here',
+            style=Pack(padding_left=10, padding_top=10, font_family='monospace', font_size=15))
+        manual_label2 = toga.Label('Pick a value that seems like a blink',
+            style=Pack(padding_left=10, padding_top=10, font_family='monospace', font_size=15))
+        manual_input = toga.NumberInput(min_value=1, max_value=99,
+            style=Pack(padding=(10, 50), width=50))
 
         calibrate_box.add(calibrate_when)
         calibrate_box.add(calibrate_button)
         calibrate_box.add(calibrate_info)
+        calibrate_box.add(graph_button)
+        calibrate_box.add(EAR_definition)
 
         # Config box
         config_box = toga.Box(style=Pack(direction=COLUMN, background_color='aqua'))
@@ -203,7 +232,7 @@ class EyeHelp(toga.App):
 
         # join threads
         self.timer_thread.join()
-        self.detect_thread.join()
+        fd.detect_thread.join()
     
     # timer that will notify user after some time (forever)
     def timer_loop(self):         
@@ -213,7 +242,7 @@ class EyeHelp(toga.App):
             elapsed_time = time.time() - start_time 
             if elapsed_time >= self.CHECKUP_TIME:
                 print('[App] Checkup time')
-                
+
                 # calls the notify function
                 command = toga.Command(self.notify, 'Command')
                 command.action(command)
@@ -243,14 +272,19 @@ class EyeHelp(toga.App):
     # notifies the user with a dialog box
     def notify(self, widget):
         print('[App] Eye notification')
-        text = 'It has been {:.1f} minutes, please take a {} second break\n'.format(self.CHECKUP_TIME/60.0, self.BREAK_TIME)
-        text += 'You have blinked {} times\n'.format(fd.blink_count)
-        text += 'Tip: ' + random.choice(self.eye_tips) + '\n'
+        minutes = self.CHECKUP_TIME/60.0
+        text = 'It has been {:.1f} minutes, please take a short break\n'.format(minutes)
+        blink_rate = fd.blink_count / minutes
+        text += 'Your blink rate is {:.1f} times / minute\n'.format(blink_rate)
+        if blink_rate < 15:
+            text += 'Tip: Try to blink more to reduce eye strain\n'
+        else:
+            text += 'Tip: ' + random.choice(self.eye_tips) + '\n'
         self.main_window.info_dialog('Eye Help', text)
 
     # save all config states to configuration file
     def save_config(self, widget):
-        self.write_config(1, str(self.video_switch.is_on)) 
+        self.write_config(1, str(self.video_switch.is_on))
 
     # reset all config states in configuration file
     def reset_config(self, widget):
@@ -281,6 +315,10 @@ class EyeHelp(toga.App):
     # calibrate ear threshold
     def start_calibrate(self, widget):
         calibrate_thread = threading.Thread(target=calibrate.start_calibrate())
+
+    # graph EAR data
+    def start_graph(self, widget):
+        grapher.start_graphing()
 
 def main():
     return EyeHelp()

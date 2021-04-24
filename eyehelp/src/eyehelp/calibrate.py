@@ -20,7 +20,7 @@ def start_calibrate():
     # read EAR data
     ear_data = open(EAR_DATA_FILE, 'r') 
     blink_ear_data = [float(i) for i in ear_data.readlines()]
-    blink_ear = min(blink_ear_data) + 0.02 # some offset
+    blink_ear = min(blink_ear_data) + 0.03 # some offset
     ear_data.close()
 
     print('[calibrate] New blink threshold: {}'.format(blink_ear))
