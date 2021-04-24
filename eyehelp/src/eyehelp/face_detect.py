@@ -8,16 +8,22 @@ import imutils
 import dlib
 import cv2
 import time
+import os
+import sys
 
-# will be used to send info to app.py
-can_see_face = False
-def has_face():
-    return can_see_face
+# info needed in app.py
+has_face = False
+detect_exit = False
 
-def start_detection(CHECKUP_TIME=20*60, BREAK_TIME=20, DISPLAY_FRAME=False):
+def start_detection(BREAK_TIME=20, DISPLAY_FRAME=False):
+    print('[face_detect] Starting face detection') 
+    global has_face
+    global detect_exit
+    has_face = False
+    detect_exit = False
     
     # path for 68 facial landmarks predictor from http://dlib.net/
-    SHAPE_PREDICTOR_FILE = 'eyehelp\src\eyehelp\shape_predictor_68_face_landmarks.dat'
+    SHAPE_PREDICTOR_FILE = os.path.dirname(sys.argv[0]) + '\\shape_predictor_68_face_landmarks.dat' 
     
     # initialize dlib face detector and facial landmark predictor
     face_detector = dlib.get_frontal_face_detector()
@@ -27,18 +33,11 @@ def start_detection(CHECKUP_TIME=20*60, BREAK_TIME=20, DISPLAY_FRAME=False):
     video_stream = VideoStream(src=0).start()
 
     # timers
-    start_time = time.time() 
+    start_time = time.time()
     last_face = time.time()
-
+    
     # main loop
     while True:
-        # if CHECKUP_TIME is 0, don't use timer
-        if CHECKUP_TIME > 0:
-            # stop loop when program reaches elapsed_time 
-            elapsed_time = time.time() - start_time
-            if elapsed_time >= CHECKUP_TIME:
-                break
-
         # convert and resize current video stream frame
         frame = video_stream.read()
         frame = imutils.resize(frame, width=400, height=400)
@@ -60,26 +59,34 @@ def start_detection(CHECKUP_TIME=20*60, BREAK_TIME=20, DISPLAY_FRAME=False):
                     cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0), 1)
 
         if DISPLAY_FRAME:
-            # display time
+            # # display time
             elapsed_time = time.time() - start_time
             cv2.putText(frame, "Time: {:.2f}".format(elapsed_time), (0, 290),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
             
             cv2.imshow("Camera", frame)
 
-        # update can_see_face if no face seen for some time (BREAK_TIME)
-        if len(faces) > 0:
+        # update has_face if no face seen for some time (BREAK_TIME)
+        # print('[face_detect] faces {}'.format(len(faces)))
+        if len(faces) > 0: 
             last_face = time.time()
-            can_see_face = True
+            has_face = True
         else:
             elapsed_time = time.time() - last_face
             if elapsed_time >= BREAK_TIME:
-                can_see_face = False
-                break
+                has_face = False
+                # break 
 
         # force quit using q key
-        if (cv2.waitKey(1) & 0xFF) == ord("q"):
+        if (cv2.waitKey(1) & 0xFF) == ord("q") or detect_exit:
+            detect_exit = True 
             break
+
+    # cleanup
+    cv2.destroyAllWindows() 
+    video_stream.stop()
+
+    print("[face_detect] program terminated")
 
 if __name__=='__main__':
     start_detection(0, 5, True)
